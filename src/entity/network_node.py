@@ -23,6 +23,7 @@ class NetworkNode(object):
                                                                   self.all_random_variables)
 
     def __str__(self):
+        """ Table representation of the probabilities with predecessors' and self random variables"""
         def probability_key(dict_key: Tuple[str]):
             return '(' + ','.join(str(v) for v in dict_key) + ')'
 
@@ -37,3 +38,7 @@ class NetworkNode(object):
         rows = [list(group[0][:-1]) + [self.probabilities[probability_key(key)] for key in group] for group in
                 grouped_combinations]
         return tabulate(tabular_data=rows, headers=headers, tablefmt='github')
+
+    def __hash__(self):
+        """ Hash method to be used in network graph"""
+        return hash(self.node_name)
