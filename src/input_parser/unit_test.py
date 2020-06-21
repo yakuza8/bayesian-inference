@@ -1,7 +1,9 @@
-import unittest
+from typing import List
+from unittest import TestCase
+from unittest.mock import patch
 
 from .input_parser import InputParser
-
+from ..entity.network_node import NetworkNode
 from ..exceptions.exceptions import (
     IncompleteNodeDataException,
     HaveAtLeastOneRandomVariable,
@@ -10,7 +12,7 @@ from ..exceptions.exceptions import (
 )
 
 
-class TestInputParser(unittest.TestCase):
+class TestInputParser(TestCase):
     _node_name = "marvelous_node"
 
     def test_essential_field_assertion_fields(self):
@@ -112,6 +114,90 @@ class TestInputParser(unittest.TestCase):
         except NotAllExpectedProbabilityExist:
             self.fail('Unexcepted exception occurred.')
 
+    @patch('json.load')
+    def test_parse_network(self, mock_load):
+        sample_network = {
+            'D': {
+                'predecessors': [],
+                'random_variables': [
+                    '0',
+                    '1'
+                ],
+                'probabilities': {
+                    '(0)': 0.6,
+                    '(1)': 0.4
+                }
+            },
+            'I': {
+                'predecessors': [],
+                'random_variables': [
+                    '0',
+                    '1'
+                ],
+                'probabilities': {
+                    '(0)': 0.7,
+                    '(1)': 0.3
+                }
+            },
+            'G': {
+                'predecessors': [
+                    'D',
+                    'I'
+                ],
+                'random_variables': [
+                    '1',
+                    '2',
+                    '3'
+                ],
+                'probabilities': {
+                    '(0,0,1)': 0.3,
+                    '(0,0,2)': 0.7,
+                    '(0,0,3)': 0.3,
+                    '(0,1,1)': 0.05,
+                    '(0,1,2)': 0.25,
+                    '(0,1,3)': 0.7,
+                    '(1,0,1)': 0.9,
+                    '(1,0,2)': 0.08,
+                    '(1,0,3)': 0.02,
+                    '(1,1,1)': 0.5,
+                    '(1,1,2)': 0.3,
+                    '(1,1,3)': 0.2
+                }
+            },
+            'K': {
+                'predecessors': [],
+                'random_variables': [
+                    'A',
+                    'B',
+                    'C'
+                ],
+                'probabilities': {
+                    '(A)': 0.586,
+                    '(B)': 0.413,
+                    '(C)': 0.001
+                }
+            }
+        }
+        mock_load.return_value = sample_network
+
+        # Test begins
+        network_nodes: List[NetworkNode] = InputParser.parse(None)
+        self.assertEqual(4, len(network_nodes))
+
+        for index, node_name in enumerate(sample_network.keys()):
+            parsed_node = network_nodes[index]
+            actual_value = sample_network[node_name]
+
+            self.assertEqual(node_name, parsed_node.node_name)
+            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN], parsed_node.predecessors)
+            self.assertListEqual(actual_value[InputParser.RANDOM_VARIABLES_TOKEN], parsed_node.random_variables)
+            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN], parsed_node.predecessors)
+            self.assertEqual(len(actual_value[InputParser.PROBABILITIES_TOKEN]), len(parsed_node.probabilities))
+            self.assertEqual(len(actual_value[InputParser.PREDECESSORS_TOKEN]) + 1,
+                             len(parsed_node.all_random_variables))
+
 
 if __name__ == '__main__':
+    import unittest
+
     unittest.main()

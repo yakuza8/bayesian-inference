@@ -11,11 +11,11 @@ class NetworkNode(object):
     def __init__(self, node_name: str, random_variables: List[str], predecessors: List[str],
                  probabilities: Dict[str, float],
                  all_random_variables: List[List[str]]):
-        self.node_name = node_name
-        self.random_variables = random_variables
-        self.predecessors = predecessors
-        self.probabilities = probabilities
-        self.all_random_variables = all_random_variables
+        self._node_name = node_name
+        self._random_variables = random_variables
+        self._predecessors = predecessors
+        self._probabilities = probabilities
+        self._all_random_variables = all_random_variables
 
     def __repr__(self):
         return 'NetworkNode({!r}, {!r}, {!r}, {!r}, {!r})'.format(self.node_name, self.random_variables,
@@ -24,6 +24,7 @@ class NetworkNode(object):
 
     def __str__(self):
         """ Table representation of the probabilities with predecessors' and self random variables"""
+
         def probability_key(dict_key: Tuple[str]):
             return '(' + ','.join(str(v) for v in dict_key) + ')'
 
@@ -42,3 +43,23 @@ class NetworkNode(object):
     def __hash__(self):
         """ Hash method to be used in network graph"""
         return hash(self.node_name)
+
+    @property
+    def node_name(self):
+        return self._node_name
+
+    @property
+    def random_variables(self):
+        return self._random_variables
+
+    @property
+    def predecessors(self):
+        return self._predecessors
+
+    @property
+    def probabilities(self):
+        return self._probabilities
+
+    @property
+    def all_random_variables(self):
+        return self._all_random_variables
