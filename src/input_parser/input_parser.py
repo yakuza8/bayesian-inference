@@ -50,12 +50,9 @@ class InputParser(object):
         predecessors: list = node_data[InputParser.PREDECESSORS_TOKEN]
         all_random_variables: list = [network[predecessor][InputParser.RANDOM_VARIABLES_TOKEN] for predecessor in
                                       predecessors] + [random_variables]
+
         # Make probability keys to have proper form
-        for key, value in probabilities.items():
-            expected_form = key.replace(' ', '')
-            if key != expected_form:
-                probabilities[expected_form] = value
-                del probabilities[key]
+        probabilities = {key.replace(' ', ''): value for key, value in probabilities.items()}
 
         # Make assertions
         InputParser._assert_essential_fields_exist(node_name=node_name, node_data=node_data)
@@ -119,6 +116,7 @@ class InputParser(object):
                     f'Expected probability {key} not exist among {node_name} probabilities.')
 
 
+"""
 if __name__ == '__main__':
     with open('../../sample_data/network_1.json', 'r') as inp:
         nodes = InputParser.parse(inp)
@@ -126,3 +124,4 @@ if __name__ == '__main__':
             print(node)
             print()
         net = BayesianNetwork(nodes)
+"""
