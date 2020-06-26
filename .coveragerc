@@ -1,4 +1,8 @@
 [run]
-branch = True
+command_line = -m unittest discover -p "*_test.py"
 source = src
 omit = *unit_test.py
+
+[report]
+include = src/*
+skip_empty = True
