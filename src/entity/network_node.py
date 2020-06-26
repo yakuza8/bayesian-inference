@@ -23,7 +23,9 @@ class NetworkNode(object):
                                                                   self.all_random_variables)
 
     def __str__(self):
-        """ Table representation of the probabilities with predecessors' and self random variables"""
+        """
+        Table representation of the probabilities with predecessors' and self random variables
+        """
 
         def probability_key(dict_key: Tuple[str]):
             return '(' + ','.join(str(v) for v in dict_key) + ')'

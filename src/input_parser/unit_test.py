@@ -112,69 +112,28 @@ class TestInputParser(TestCase):
         try:
             InputParser._assert_all_probabilities_exist(self._node_name, sample_probability, all_random_variables)
         except NotAllExpectedProbabilityExist:
-            self.fail('Unexcepted exception occurred.')
+            self.fail('Un-excepted exception occurred.')
 
     @patch('json.load')
     def test_parse_network(self, mock_load):
         sample_network = {
             'D': {
-                'predecessors': [],
-                'random_variables': [
-                    '0',
-                    '1'
-                ],
-                'probabilities': {
-                    '(0)': 0.6,
-                    '(1)': 0.4
+                'predecessors': [], 'random_variables': ['0', '1'], 'probabilities': {
+                    '(0)': 0.6, '(1)': 0.4
                 }
-            },
-            'I': {
-                'predecessors': [],
-                'random_variables': [
-                    '0',
-                    '1'
-                ],
-                'probabilities': {
-                    '(0)': 0.7,
-                    '(1)': 0.3
+            }, 'I': {
+                'predecessors': [], 'random_variables': ['0', '1'], 'probabilities': {
+                    '(0)': 0.7, '(1)': 0.3
                 }
-            },
-            'G': {
-                'predecessors': [
-                    'D',
-                    'I'
-                ],
-                'random_variables': [
-                    '1',
-                    '2',
-                    '3'
-                ],
-                'probabilities': {
-                    '(0, 0, 1)': 0.3,
-                    '(0, 0, 2)': 0.7,
-                    '(0, 0, 3)': 0.3,
-                    '(0, 1, 1)': 0.05,
-                    '(0, 1, 2)': 0.25,
-                    '(0, 1, 3)': 0.7,
-                    '(1, 0, 1)': 0.9,
-                    '(1, 0, 2)': 0.08,
-                    '(1, 0, 3)': 0.02,
-                    '(1, 1, 1)': 0.5,
-                    '(1, 1, 2)': 0.3,
-                    '(1, 1, 3)': 0.2
+            }, 'G': {
+                'predecessors': ['D', 'I'], 'random_variables': ['1', '2', '3'], 'probabilities': {
+                    '(0, 0, 1)': 0.3, '(0, 0, 2)': 0.7, '(0, 0, 3)': 0.3, '(0, 1, 1)': 0.05,
+                    '(0, 1, 2)': 0.25, '(0, 1, 3)': 0.7, '(1, 0, 1)': 0.9, '(1, 0, 2)': 0.08,
+                    '(1, 0, 3)': 0.02, '(1, 1, 1)': 0.5, '(1, 1, 2)': 0.3, '(1, 1, 3)': 0.2
                 }
-            },
-            'K': {
-                'predecessors': [],
-                'random_variables': [
-                    'A',
-                    'B',
-                    'C'
-                ],
-                'probabilities': {
-                    '(A)': 0.586,
-                    '(B)': 0.413,
-                    '(C)': 0.001
+            }, 'K': {
+                'predecessors': [], 'random_variables': ['A', 'B', 'C'], 'probabilities': {
+                    '(A)': 0.586, '(B)': 0.413, '(C)': 0.001
                 }
             }
         }
@@ -189,14 +148,12 @@ class TestInputParser(TestCase):
             actual_value = sample_network[node_name]
 
             self.assertEqual(node_name, parsed_node.node_name)
-            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN], parsed_node.predecessors)
-            self.assertListEqual(actual_value[InputParser.RANDOM_VARIABLES_TOKEN], parsed_node.random_variables)
-            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN], parsed_node.predecessors)
+            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN],
+                                 parsed_node.predecessors)
+            self.assertListEqual(actual_value[InputParser.RANDOM_VARIABLES_TOKEN],
+                                 parsed_node.random_variables)
+            self.assertListEqual(actual_value[InputParser.PREDECESSORS_TOKEN],
+                                 parsed_node.predecessors)
             self.assertEqual(len(actual_value[InputParser.PROBABILITIES_TOKEN]), len(parsed_node.probabilities))
             self.assertEqual(len(actual_value[InputParser.PREDECESSORS_TOKEN]) + 1,
                              len(parsed_node.all_random_variables))
-
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
