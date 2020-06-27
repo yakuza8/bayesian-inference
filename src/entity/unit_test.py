@@ -38,6 +38,12 @@ class TestNetworkNode(TestCase):
         # Hash
         self.assertEqual(hash(node_name), hash(node))
 
+        # String representation as table
+        table = str(node)
+        self.assertTrue(node_name in table)
+        self.assertTrue(all(random_variable in table for random_variable in random_variables))
+        self.assertTrue(all(str(probability) in table for probability in probabilities.values()))
+
 
 class TestBayesianNetwork(TestCase):
     sample_network = [
