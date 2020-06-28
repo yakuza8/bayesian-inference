@@ -2,10 +2,11 @@ import itertools
 import json
 from typing import TextIO, List
 
-from ..entity.bayesian_network import BayesianNetwork
 from ..entity.network_node import NetworkNode
-from ..exceptions.exceptions import IncompleteNodeDataException, PredecessorNotExistInNetwork, \
-    NotAllExpectedProbabilityExist, HaveAtLeastOneRandomVariable
+from ..exceptions.exceptions import (
+    IncompleteNodeDataException, PredecessorNotExistInNetwork, NotAllExpectedProbabilityExist,
+    HaveAtLeastOneRandomVariable,
+)
 
 
 class InputParser(object):
@@ -48,8 +49,8 @@ class InputParser(object):
         random_variables: list = node_data[InputParser.RANDOM_VARIABLES_TOKEN]
         probabilities: dict = node_data[InputParser.PROBABILITIES_TOKEN]
         predecessors: list = node_data[InputParser.PREDECESSORS_TOKEN]
-        all_random_variables: list = [network[predecessor][InputParser.RANDOM_VARIABLES_TOKEN] for predecessor in
-                                      predecessors] + [random_variables]
+        all_random_variables: list = [network[predecessor][InputParser.RANDOM_VARIABLES_TOKEN] for
+                                      predecessor in predecessors] + [random_variables]
 
         # Make probability keys to have proper form
         probabilities = {key.replace(' ', ''): value for key, value in probabilities.items()}
@@ -57,11 +58,13 @@ class InputParser(object):
         # Make assertions
         InputParser._assert_essential_fields_exist(node_name=node_name, node_data=node_data)
         InputParser._assert_all_predecessors_exist(node_data=node_data, network=network)
-        InputParser._assert_all_probabilities_exist(node_name=node_name, probabilities=probabilities,
+        InputParser._assert_all_probabilities_exist(node_name=node_name,
+                                                    probabilities=probabilities,
                                                     all_random_variables=all_random_variables)
 
-        return NetworkNode(node_name=node_name, random_variables=random_variables, predecessors=predecessors,
-                           probabilities=probabilities, all_random_variables=all_random_variables)
+        return NetworkNode(node_name=node_name, random_variables=random_variables,
+                           predecessors=predecessors, probabilities=probabilities,
+                           all_random_variables=all_random_variables)
 
     @staticmethod
     def _assert_essential_fields_exist(node_name: str, node_data: dict) -> None:
@@ -80,7 +83,8 @@ class InputParser(object):
                     f'Check node {node_name}, it lacks of {field} field.')
 
         if len(node_data[InputParser.RANDOM_VARIABLES_TOKEN]) == 0:
-            raise HaveAtLeastOneRandomVariable(f'Node {node_name} should have at least one random variable.')
+            raise HaveAtLeastOneRandomVariable(
+                f'Node {node_name} should have at least one random variable.')
 
     @staticmethod
     def _assert_all_predecessors_exist(node_data: dict, network: dict) -> None:
@@ -89,24 +93,29 @@ class InputParser(object):
         :param node_data: Node data to fetch predecessor list
         :param network: Whole network which is candidate to be parsed
         :return: None
-        :raises PredecessorNotExistInNetwork: In case of not having one of the predecessors in the network
+        :raises PredecessorNotExistInNetwork: In case of not having one of the predecessors in
+        the network
         """
         # Check all predecessors exist
         predecessors = node_data[InputParser.PREDECESSORS_TOKEN]
         for predecessor in predecessors:
             if predecessor not in network:
-                raise PredecessorNotExistInNetwork(f'No predecessor {predecessor} exist in network.')
+                raise PredecessorNotExistInNetwork(
+                    f'No predecessor {predecessor} exist in network.')
 
     @staticmethod
-    def _assert_all_probabilities_exist(node_name: str, probabilities: dict, all_random_variables: list) -> None:
+    def _assert_all_probabilities_exist(node_name: str, probabilities: dict,
+                                        all_random_variables: list) -> None:
         """
         Checking whether all the expected probabilities exist in the given input
         :param node_name: Node name to refer in exception
         :param probabilities: Probabilities of the current node
-        :param all_random_variables: All random variables as a list where predecessor and current node's variables
+        :param all_random_variables: All random variables as a list where predecessor and current
+        node's variables
         are combined
         :return: None
-        :raises NotAllExpectedProbabilityExist: In case of not having one of the expected probabilities in the input
+        :raises NotAllExpectedProbabilityExist: In case of not having one of the expected
+        probabilities in the input
         """
         # Iterate over each combination so that verify all of them exist
         for combination in itertools.product(*all_random_variables):
@@ -114,14 +123,3 @@ class InputParser(object):
             if key not in probabilities:
                 raise NotAllExpectedProbabilityExist(
                     f'Expected probability {key} not exist among {node_name} probabilities.')
-
-
-"""
-if __name__ == '__main__':
-    with open('../../sample_data/network_1.json', 'r') as inp:
-        nodes = InputParser.parse(inp)
-        for node in nodes:
-            print(node)
-            print()
-        net = BayesianNetwork(nodes)
-"""

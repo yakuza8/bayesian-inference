@@ -5,12 +5,12 @@ from tabulate import tabulate
 
 class NetworkNode(object):
     """
-    Bayesian network node which have random variable list, predecessor list and probability table in it
+    Bayesian network node which have random variable list, predecessor list and probability table
+    in it
     """
 
     def __init__(self, node_name: str, random_variables: List[str], predecessors: List[str],
-                 probabilities: Dict[str, float],
-                 all_random_variables: List[List[str]]):
+                 probabilities: Dict[str, float], all_random_variables: List[List[str]]):
         self._node_name = node_name
         self._random_variables = random_variables
         self._predecessors = predecessors
@@ -18,14 +18,16 @@ class NetworkNode(object):
         self._all_random_variables = all_random_variables
 
     def __repr__(self):
-        return 'NetworkNode({!r}, {!r}, {!r}, {!r}, {!r})'.format(self.node_name, self.random_variables,
-                                                                  self.predecessors, self.probabilities,
+        return 'NetworkNode({!r}, {!r}, {!r}, {!r}, {!r})'.format(self.node_name,
+                                                                  self.random_variables,
+                                                                  self.predecessors,
+                                                                  self.probabilities,
                                                                   self.all_random_variables)
 
     def __str__(self):
         """
         Table representation of the probabilities with predecessors' and self random variables
-        """
+        z"""
 
         def probability_key(dict_key: Tuple[str]):
             return '(' + ','.join(str(v) for v in dict_key) + ')'
@@ -36,10 +38,11 @@ class NetworkNode(object):
         grouped_combinations = [all_combinations[i * count_of_rv:(i + 1) * count_of_rv] for i in
                                 range(int(len(all_combinations) / count_of_rv))]
         # Create header for each predecessor and random variables
-        headers = self.predecessors + [f'P({self.node_name}={variable})' for variable in self.random_variables]
+        headers = self.predecessors + [f'P({self.node_name}={variable})' for variable in
+                                       self.random_variables]
         # Row data where predecessor random variables are changing and each probability is inserted
-        rows = [list(group[0][:-1]) + [self.probabilities[probability_key(key)] for key in group] for group in
-                grouped_combinations]
+        rows = [list(group[0][:-1]) + [self.probabilities[probability_key(key)] for key in group]
+                for group in grouped_combinations]
         return tabulate(tabular_data=rows, headers=headers, tablefmt='github')
 
     def __hash__(self):
