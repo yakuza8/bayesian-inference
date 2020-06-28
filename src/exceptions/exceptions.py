@@ -13,3 +13,12 @@ class NotAllExpectedProbabilityExist(Exception):
 
 class HaveAtLeastOneRandomVariable(Exception):
     pass
+
+
+# Probability
+class NonUniqueRandomVariablesInQuery(Exception):
+    pass
+
+
+class RandomVariableNotInContext(Exception):
+    pass
