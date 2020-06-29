@@ -35,28 +35,28 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
 
     >>> # Valid queries
     >>> query_parser('A, B, C')[0]
-    >>> True
+    True
     >>> query_parser('A, B=b, C')[0]
-    >>> True
+    True
     >>> query_parser('A=1, B, C')[0]
-    >>> True
+    True
     >>> query_parser('A, B, C=2')[0]
-    >>> True
+    True
     >>> query_parser('A=1, B=2, C=3')[0]
-    >>> True
+    True
     >>> query_parser('A, B, C | D=d')[0]
-    >>> True
+    True
     >>> query_parser('A=1, B=2, C=2 | D=d')[0]
-    >>> True
+    True
     >>> query_parser('A, B=2, C | D=d, E=5')[0]
-    >>> True
+    True
     >>> # Invalid queries (It is expected that all evidence variables should have value)
     >>> query_parser('A, B, C | D')[0]
-    >>> False
+    False
     >>> query_parser('A, B=b, C | D')[0]
-    >>> False
+    False
     >>> query_parser('A=1, B, C | D')[0]
-    >>> False
+    False
     """
 
     def map_to_query_variable(matched: re.Match):
@@ -112,3 +112,7 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
         return True, queries, evidences
     else:
         return False, None, None
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
