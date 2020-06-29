@@ -112,7 +112,3 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
         return True, queries, evidences
     else:
         return False, None, None
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
