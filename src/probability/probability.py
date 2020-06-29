@@ -24,7 +24,7 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
     """
     Query parsing functionality where conditional probabilities also supported
 
-    :param query: String valued query where expected format is like 'X,Y=2...|Z=3,K...' where query
+    :param query: String valued query where expected format is like 'X,Y=2..|Z=3,K=k..' where query
     variables should have at least one entity and evidence part could have zero or more entity.
     Also, query variables could have no value, but all evidence variables should have known
     variables
@@ -32,6 +32,31 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
     be done whether query variables exist among them and their values are valid
     :return: Boolean flag whether the query successfully, list of query variables and list of
     evidence variables
+
+    >>> # Valid queries
+    >>> query_parser('A, B, C')[0]
+    >>> True
+    >>> query_parser('A, B=b, C')[0]
+    >>> True
+    >>> query_parser('A=1, B, C')[0]
+    >>> True
+    >>> query_parser('A, B, C=2')[0]
+    >>> True
+    >>> query_parser('A=1, B=2, C=3')[0]
+    >>> True
+    >>> query_parser('A, B, C | D=d')[0]
+    >>> True
+    >>> query_parser('A=1, B=2, C=2 | D=d')[0]
+    >>> True
+    >>> query_parser('A, B=2, C | D=d, E=5')[0]
+    >>> True
+    >>> # Invalid queries (It is expected that all evidence variables should have value)
+    >>> query_parser('A, B, C | D')[0]
+    >>> False
+    >>> query_parser('A, B=b, C | D')[0]
+    >>> False
+    >>> query_parser('A=1, B, C | D')[0]
+    >>> False
     """
 
     def map_to_query_variable(matched: re.Match):
@@ -64,6 +89,7 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
                     f'{variable.name} is either not in context or its value is not satified to '
                     f'have.')
 
+    # Try to full match, we need full match for query. Otherwise, it is not parsable
     match = re.fullmatch(QUERY, query)
 
     if match:
@@ -82,7 +108,7 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
                                                  context=expected_symbol_and_values)
             check_all_variables_exist_in_context(variables=evidences,
                                                  context=expected_symbol_and_values)
-
+        # Return parsed query variables and evidence variables
         return True, queries, evidences
     else:
         return False, None, None
