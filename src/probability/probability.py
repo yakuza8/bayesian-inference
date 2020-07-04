@@ -1,3 +1,4 @@
+import logging
 import re
 
 from dataclasses import dataclass
@@ -93,6 +94,8 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
     match = re.fullmatch(QUERY, query)
 
     if match:
+        logging.debug("Full match occurred.")
+
         # Separate queries and evidences
         split = re.split(r'\|', query)
         queries, evidences = split[0], split[1] if len(split) > 1 else ''
@@ -102,13 +105,19 @@ def query_parser(query: str, expected_symbol_and_values: Dict[str, List[str]] = 
         evidences = [map_to_query_variable(matched=m) for m in re.finditer(VALUED_GROUP, evidences)]
 
         # Make validations
+        logging.debug("Validation of variable uniqueness will be done.")
         make_all_variables_unique(query_variables=queries, evidence_variables=evidences)
         if expected_symbol_and_values is not None:
+            logging.debug(f"Validation of expected symbol and value will be done over "
+                          f"{expected_symbol_and_values}.")
             check_all_variables_exist_in_context(variables=queries,
                                                  context=expected_symbol_and_values)
             check_all_variables_exist_in_context(variables=evidences,
                                                  context=expected_symbol_and_values)
         # Return parsed query variables and evidence variables
+        logging.debug(f"Parsed queries: {queries} and evidences: {evidences}.")
         return True, queries, evidences
     else:
+        logging.warning(
+            f"The given query is not matched with expected regular expression: {QUERY}")
         return False, None, None
