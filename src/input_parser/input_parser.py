@@ -34,10 +34,13 @@ class InputParser(object):
     def parse(file: TextIO) -> List[NetworkNode]:
         # Read data
         network = json.load(file)
+        return InputParser.from_dict(network_dict=network)
 
+    @staticmethod
+    def from_dict(network_dict: dict):
         parsed_nodes = []
-        for node_name in network:
-            parsed_node = InputParser.validate_and_parse_node(node_name, network)
+        for node_name in network_dict:
+            parsed_node = InputParser.validate_and_parse_node(node_name, network_dict)
             parsed_nodes.append(parsed_node)
 
         return parsed_nodes
