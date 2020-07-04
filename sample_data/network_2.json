@@ -1,0 +1,74 @@
+{
+  "Burglary": {
+    "predecessors": [],
+    "random_variables": [
+      "t",
+      "f"
+    ],
+    "probabilities": {
+      "(t)": 0.001,
+      "(f)": 0.999
+    }
+  },
+  "Earthquake": {
+    "predecessors": [],
+    "random_variables": [
+      "t",
+      "f"
+    ],
+    "probabilities": {
+      "(t)": 0.002,
+      "(f)": 0.998
+    }
+  },
+  "Alarm": {
+    "predecessors": [
+      "Burglary",
+      "Earthquake"
+    ],
+    "random_variables": [
+      "t",
+      "f"
+    ],
+    "probabilities": {
+      "(f,f,f)": 0.999,
+      "(f,f,t)": 0.001,
+      "(f,t,f)": 0.71,
+      "(f,t,t)": 0.29,
+      "(t,f,f)": 0.06,
+      "(t,f,t)": 0.94,
+      "(t,t,f)": 0.05,
+      "(t,t,t)": 0.95
+    }
+  },
+  "JohnCalls": {
+    "predecessors": [
+      "Alarm"
+    ],
+    "random_variables": [
+      "t",
+      "f"
+    ],
+    "probabilities": {
+      "(f,f)": 0.95,
+      "(f,t)": 0.05,
+      "(t,f)": 0.10,
+      "(t,t)": 0.90
+    }
+  },
+  "MaryCalls": {
+    "predecessors": [
+      "Alarm"
+    ],
+    "random_variables": [
+      "t",
+      "f"
+    ],
+    "probabilities": {
+      "(f,f)": 0.99,
+      "(f,t)": 0.01,
+      "(t,f)": 0.30,
+      "(t,t)": 0.70
+    }
+  }
+}
