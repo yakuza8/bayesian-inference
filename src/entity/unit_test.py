@@ -222,3 +222,86 @@ class TestBayesianNetwork(TestCase):
         self.assertEqual(0, len(network.edges_to_add['Y']))
         self.assertEqual(0, len(network.edges_to_add['Z']))
         self.assertEqual(0, len(network.edges_to_add['Q']))
+
+
+class BayesianNetworkProbabilityTest(TestCase):
+    BURGLARY = "Burglary"
+    EARTHQUAKE = "Earthquake"
+    ALARM = "Alarm"
+    JOHN_CALLS = "JohnCalls"
+    MARRY_CALLS = "MaryCalls"
+
+    sample_network = {
+        BURGLARY: {
+            "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
+                "(t)": 0.001, "(f)": 0.999
+            }
+        }, EARTHQUAKE: {
+            "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
+                "(t)": 0.002, "(f)": 0.998
+            }
+        }, ALARM: {
+            "predecessors": [BURGLARY, EARTHQUAKE], "random_variables": ["t", "f"],
+            "probabilities": {
+                "(f,f,f)": 0.999, "(f,f,t)": 0.001, "(f,t,f)": 0.71, "(f,t,t)": 0.29,
+                "(t,f,f)": 0.06, "(t,f,t)": 0.94, "(t,t,f)": 0.05, "(t,t,t)": 0.95
+            }
+        }, JOHN_CALLS: {
+            "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
+                "(f,f)": 0.95, "(f,t)": 0.05, "(t,f)": 0.10, "(t,t)": 0.90
+            }
+        }, MARRY_CALLS: {
+            "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
+                "(f,f)": 0.99, "(f,t)": 0.01, "(t,f)": 0.30, "(t,t)": 0.70
+            }
+        }
+    }
+
+    def setUp(self) -> None:
+        from ..input_parser.input_parser import InputParser
+        self.network = BayesianNetwork(initial_network=InputParser.from_dict(self.sample_network))
+
+    def test_variable_elimination(self):
+        # Try each variable one by one
+        variables = {self.JOHN_CALLS}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.JOHN_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
+                            needed_variable_set)
+
+        variables = {self.MARRY_CALLS}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.MARRY_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
+                            needed_variable_set)
+
+        variables = {self.ALARM}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.ALARM, self.EARTHQUAKE, self.BURGLARY}, needed_variable_set)
+
+        variables = {self.EARTHQUAKE}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.EARTHQUAKE}, needed_variable_set)
+
+        variables = {self.BURGLARY}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.BURGLARY}, needed_variable_set)
+
+        # Try multiple variables at a time
+        variables = {self.JOHN_CALLS, self.MARRY_CALLS}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual(
+            {self.JOHN_CALLS, self.MARRY_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
+            needed_variable_set)
+
+        variables = {self.JOHN_CALLS, self.ALARM}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.JOHN_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
+                            needed_variable_set)
+
+        variables = {self.EARTHQUAKE, self.BURGLARY}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.EARTHQUAKE, self.BURGLARY}, needed_variable_set)
+
+        variables = {self.MARRY_CALLS, self.EARTHQUAKE}
+        needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
+        self.assertSetEqual({self.MARRY_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
+                            needed_variable_set)

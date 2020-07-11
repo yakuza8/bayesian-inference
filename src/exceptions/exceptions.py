@@ -22,3 +22,8 @@ class NonUniqueRandomVariablesInQuery(Exception):
 
 class RandomVariableNotInContext(Exception):
     pass
+
+
+# Bayesian Network
+class InvalidQuery(Exception):
+    pass

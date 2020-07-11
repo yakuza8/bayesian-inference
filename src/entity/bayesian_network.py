@@ -1,10 +1,12 @@
 import logging
-from collections import defaultdict
-from typing import List
+from collections import defaultdict, deque
+from typing import List, Callable, Dict, Generator, Set
 
 import networkx as nx
 
 from .network_node import NetworkNode
+from ..exceptions.exceptions import InvalidQuery
+from ..probability.probability import query_parser, QueryVariable
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)-8s : %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
@@ -154,3 +156,54 @@ class BayesianNetwork(object):
 
         logging.debug(f'{node_name} is successfully removed from the network.')
         return True
+
+    def P(self, query: str) -> float:
+        """
+        Exact probabilistic inference function that will be used for calculation of full-joint and
+        conditional probabilities on the given bayesian network context.
+        """
+        is_parsed, queries, evidences = query_parser(query=query,
+                                                     expected_symbol_and_values=self.symbol_context)
+
+        if not is_parsed:
+            raise InvalidQuery("Query does not hold for full match!")
+
+        self._decide_calculation_order(queries, evidences)
+
+    @property
+    def symbol_context(self) -> Dict[str, List[str]]:
+        """
+        Utility to get nodes and their random variables in dictionary format
+        """
+        return {node_name: node.random_variables for node_name, node in self.nodes.items()}
+
+    @property
+    def network_topology(self) -> Generator[str, str, str]:
+        return nx.topological_sort(self.G)
+
+    def _decide_calculation_order(self, queries: List[QueryVariable],
+                                  evidences: List[QueryVariable]):
+
+        self._eliminate_unnecessary_variables(variables={v.name for v in queries + evidences})
+
+    def _eliminate_unnecessary_variables(self, variables: Set[str]) -> Set[str]:
+        """
+        Breadth-first traversal of variables with recursive predecessors for elimination of
+        unnecessary variables for the sake of optimization
+        """
+        logging.debug(f'Variable elimination with the given variable set: {variables}')
+        set_of_needed_variables = set()
+        for node in reversed(list(self.network_topology)):
+            if node in variables:
+                # Breadth-first strategy for iterating recursive predecessors
+                traverse_queue = deque([node])
+                while traverse_queue:
+                    variable = traverse_queue.pop()
+                    if variable not in set_of_needed_variables:
+                        set_of_needed_variables.add(variable)
+                        traverse_queue.extend(self.nodes[variable].predecessors)
+        logging.debug(f'Extracted necessary variables: {set_of_needed_variables}')
+        return set_of_needed_variables
+
+
+P: Callable[[BayesianNetwork, str], float] = lambda network, query: network.P(query=query)
