@@ -1,15 +1,35 @@
 import logging
 from collections import defaultdict, deque
-from typing import List, Callable, Dict, Generator, Set
+from dataclasses import dataclass
+from itertools import product
+from typing import List, Callable, Dict, Generator, Set, Iterable, Tuple, Union
 
 import networkx as nx
 
 from .network_node import NetworkNode
-from ..exceptions.exceptions import InvalidQuery
+from ..exceptions.exceptions import InvalidQuery, InvalidProbabilityFactor
 from ..probability.probability import query_parser, QueryVariable
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)-8s : %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
+
+
+@dataclass
+class ProbabilityFactor:
+    """
+    Internally maintained class where it will be used for calculation of probability value in
+    the network
+
+    Use cases listed below:
+        * value is None and sum_out = False     : Query variable feed by outer scope value
+        * value is not None and sum_out = False : Known variable with value
+        * value is None and sum_out = True      : Hidden variable which will be summed-out
+        * value is not None and sum_out = True  : No meaning and exception
+    """
+
+    name: str
+    value: str = None
+    sum_out: bool = False
 
 
 class BayesianNetwork(object):
@@ -123,6 +143,7 @@ class BayesianNetwork(object):
                                      update_internal_variables: bool = True):
         """
         Link edges of the node which could not be added before
+
         :param node_key: Node name to refer the node
         :param target_graph: Target graph on which updates will be done
         :param update_internal_variables: Boolean flag whether to do update on internal variables
@@ -138,6 +159,7 @@ class BayesianNetwork(object):
         """
         Procedure of removal node from the network where it is removed from node dict and graph,
         and removed expected link lists
+
         :param node_name: Node name to refer node itself
         :return: Boolean flag whether the node name found and removed successfully from network
         """
@@ -157,18 +179,135 @@ class BayesianNetwork(object):
         logging.debug(f'{node_name} is successfully removed from the network.')
         return True
 
-    def P(self, query: str) -> float:
+    def P(self, query: str) -> Union[float, Dict[str, float]]:
         """
         Exact probabilistic inference function that will be used for calculation of full-joint and
         conditional probabilities on the given bayesian network context.
+
+        .. note:: Nominator is returned as with multiple query variable combinations if there
+            exist any query variable
+
+        :param query: Query that will be evaluated with the network context
+        :return: Exact inference probability of the query in the network
+        :raises InvalidQuery: If query is not valid
         """
         is_parsed, queries, evidences = query_parser(query=query,
                                                      expected_symbol_and_values=self.symbol_context)
-
+        # If not parsed, then raise error immediately
         if not is_parsed:
             raise InvalidQuery("Query does not hold for full match!")
+        # Get nominator for different query variables and denominator for each evidence variable
+        nominator_context = self._calculate_joint_probability(queries + evidences)
+        denominator = self._calculate_joint_probability(evidences)
+        # Calculate exact inferred probability of each query variable combination
+        if type(nominator_context) == float:
+            return nominator_context / denominator
+        else:
+            return {context: value / denominator for context, value in nominator_context.items()}
 
-        self._decide_calculation_order(queries, evidences)
+    def _calculate_joint_probability(self, variables: List[QueryVariable]) \
+            -> Union[float, Dict[str, float]]:
+        """
+        Calculation of probabilities of the given variable set where it is made up of query and
+        evidence variables
+
+        Procedural steps:
+            * Find needed variables, hidden variables
+            * Decide order of calculation for the probability factors
+            * For each query variable combination, calculate probability if exist
+
+        :param variables: Variables composed from query and evidence variables
+        :return: Single float if no query variable exist, otherwise dictionary with keys query
+            variable contexts
+        """
+        # Set of variable names of query + evidence
+        needed_variable_names = {v.name: v for v in variables}
+        # Set of all the variables where query + evidence + hidden variables included
+        purified_variables = self._eliminate_unnecessary_variables(
+            variables=needed_variable_names.keys())
+        # Hidden variables
+        hidden_variables = {v for v in purified_variables if v not in needed_variable_names}
+
+        order = self._decide_calculation_order(needed_variable_names=needed_variable_names,
+                                               purified_variables=purified_variables,
+                                               hidden_variables=hidden_variables)
+
+        # Find all query variables
+        query_variable_names = [variable.name for variable in variables if variable.value is None]
+        query_variable_values = [self.nodes[variable_name].random_variables for variable_name in
+                                 query_variable_names]
+
+        # If any exists, calculate probability for each combination of query variables
+        if query_variable_names:
+            return_context_probability = {}
+            for combination in product(*query_variable_values):
+                context = dict(zip(query_variable_names, combination))
+                p = self._probability_inference(tuple(order), **context)
+                return_context_probability[str(context)] = p
+            return return_context_probability
+        else:
+            return self._probability_inference(tuple(order))
+
+    def _probability_inference(self, calculation_order: Tuple[ProbabilityFactor], tab_stop: int = 0,
+                               **context) -> float:
+        """
+        Probability calculation of defined calculation order with the given initial context
+
+        Recursive function where
+
+        * Base Case -> returning 1.0 if no factor exist
+        * Otherwise -> fetches first factor from the list
+            * If value is query variable -> Find its probability and multiplies with rest of factors
+            * If value is hidden variable -> Sum out all possible values multiply with other factors
+            * If value is known variable -> Find its probability and multiplies with rest of factors
+            * Otherwise, raises exception since factor does not represent anything
+
+        :param calculation_order: Predefined order of factors to be calculated of full-joint
+            probability
+        :return: Calculated probability of the given factors
+        :raises InvalidProbabilityFactor: When the current factor has value and needs sum-out
+        """
+        if len(calculation_order) == 0:
+            # If no factor is found, then return 1.0
+            base_probability = 1.0
+            logging.debug(
+                '\t' * tab_stop + f'Hit base case: {base_probability} with context: {context}')
+            return base_probability
+        else:
+            first_factor = calculation_order[0]
+            node_name = first_factor.name
+            node = self.nodes[node_name]
+
+            if first_factor.value is None and not first_factor.sum_out:
+                # Query variable - Value should be fetched from context
+                probability = node.probability(**context)
+                logging.debug(
+                    '\t' * tab_stop + f'Query variable {node_name} : {probability} with context: '
+                                      f'{context}')
+                return probability * self._probability_inference(calculation_order[1:],
+                                                                 tab_stop=tab_stop + 1, **context)
+            elif first_factor.value is None and first_factor.sum_out:
+                # Hidden variable
+                logging.debug(
+                    '\t' * tab_stop + f'Hidden variable {node_name} with context: {context}')
+                return sum(self._probability_inference(
+                    (ProbabilityFactor(name=node_name, value=v),) + calculation_order[1:],
+                    tab_stop=tab_stop + 1, **context) for v in node.random_variables)
+            elif first_factor.value is not None and not first_factor.sum_out:
+                # Known variable
+                new_context = context.copy()
+                new_context[node_name] = first_factor.value
+                probability = node.probability(**new_context)
+                logging.debug(
+                    '\t' * tab_stop + f'Known variable {node_name} : {probability} with context: '
+                                      f'{new_context}')
+                return probability * self._probability_inference(calculation_order[1:],
+                                                                 tab_stop=tab_stop + 1,
+                                                                 **new_context)
+            else:
+                error_message = f'Unexpected probability factor for {first_factor.value}!'
+                logging.error(error_message)
+                raise InvalidProbabilityFactor(error_message)
 
     @property
     def symbol_context(self) -> Dict[str, List[str]]:
@@ -181,17 +320,36 @@ class BayesianNetwork(object):
     def network_topology(self) -> Generator[str, str, str]:
         return nx.topological_sort(self.G)
 
-    def _decide_calculation_order(self, queries: List[QueryVariable],
-                                  evidences: List[QueryVariable]):
+    def _decide_calculation_order(self, needed_variable_names: Dict[str, QueryVariable],
+                                  purified_variables: Set[str],
+                                  hidden_variables: Set[str]) -> List[ProbabilityFactor]:
+        """
+        Functionality for deciding calculation order of probability where variables
 
-        self._eliminate_unnecessary_variables(variables={v.name for v in queries + evidences})
+        :param needed_variable_names: Definitely needed variables composed of query and evidence
+            variables
+        :param purified_variables: Set of all the variables constructed from the needed_variables
+            by fetching their parents recursively
+        :param hidden_variables: Hidden variables filtered from purified variables
+        :return: Ordered state of variables
+        """
+        topology_order = {node: position for position, node in enumerate(self.network_topology)}
+        calculation_order = [ProbabilityFactor(name=variable, value=needed_variable_names[
+            variable].value if variable in needed_variable_names else None,
+                                               sum_out=variable in hidden_variables, ) for variable
+                             in sorted(list(purified_variables),
+                                       key=lambda node: topology_order[node])]
+        return calculation_order
 
-    def _eliminate_unnecessary_variables(self, variables: Set[str]) -> Set[str]:
+    def _eliminate_unnecessary_variables(self, variables: Iterable[str]) -> Set[str]:
         """
         Breadth-first traversal of variables with recursive predecessors for elimination of
         unnecessary variables for the sake of optimization
+
+        :param variables: Set of variables which are necessarily needed
+        :return: Set of variables where parameters and their recursive parents are added
         """
-        logging.debug(f'Variable elimination with the given variable set: {variables}')
+        logging.debug(f"Variable elimination with the given variable set: {variables}")
         set_of_needed_variables = set()
         for node in reversed(list(self.network_topology)):
             if node in variables:
@@ -202,7 +360,7 @@ class BayesianNetwork(object):
                     if variable not in set_of_needed_variables:
                         set_of_needed_variables.add(variable)
                         traverse_queue.extend(self.nodes[variable].predecessors)
-        logging.debug(f'Extracted necessary variables: {set_of_needed_variables}')
+        logging.debug(f"Extracted necessary variables: {set_of_needed_variables}")
         return set_of_needed_variables
 
 

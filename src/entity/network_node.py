@@ -29,9 +29,6 @@ class NetworkNode(object):
         Table representation of the probabilities with predecessors' and self random variables
         """
 
-        def probability_key(dict_key: Tuple[str]):
-            return '(' + ','.join(str(v) for v in dict_key) + ')'
-
         # Get all combinations of keys for probabilities
         all_combinations = list(itertools.product(*self.all_random_variables))
         count_of_rv = len(self.random_variables)
@@ -41,8 +38,9 @@ class NetworkNode(object):
         headers = self.predecessors + [f'P({self.node_name}={variable})' for variable in
                                        self.random_variables]
         # Row data where predecessor random variables are changing and each probability is inserted
-        rows = [list(group[0][:-1]) + [self.probabilities[probability_key(key)] for key in group]
-                for group in grouped_combinations]
+        rows = [
+            list(group[0][:-1]) + [self.probabilities[NetworkNode._probability_key(key)] for key in
+                                   group] for group in grouped_combinations]
         return tabulate(tabular_data=rows, headers=headers, tablefmt='github')
 
     def __hash__(self):
@@ -68,3 +66,11 @@ class NetworkNode(object):
     @property
     def all_random_variables(self):
         return self._all_random_variables
+
+    def probability(self, **context):
+        values: List[str] = [context[p] for p in self.predecessors] + [context[self.node_name]]
+        return self._probabilities[NetworkNode._probability_key(tuple(values))]
+
+    @staticmethod
+    def _probability_key(dict_key: Tuple[str]):
+        return '(' + ','.join(str(v) for v in dict_key) + ')'

@@ -27,3 +27,7 @@ class RandomVariableNotInContext(Exception):
 # Bayesian Network
 class InvalidQuery(Exception):
     pass
+
+
+class InvalidProbabilityFactor(Exception):
+    pass
