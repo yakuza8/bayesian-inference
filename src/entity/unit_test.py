@@ -1,7 +1,8 @@
 from unittest import TestCase, mock
 
-from .bayesian_network import BayesianNetwork
+from .bayesian_network import BayesianNetwork, ProbabilityFactor
 from .network_node import NetworkNode
+from ..probability.probability import QueryVariable
 
 
 class TestNetworkNode(TestCase):
@@ -264,6 +265,58 @@ class BayesianNetworkProbabilityTest(TestCase):
     def setUp(self) -> None:
         from ..input_parser.input_parser import InputParser
         self.network = BayesianNetwork(initial_network=InputParser.from_dict(self.sample_network))
+
+    @mock.patch('src.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
+    def test_single_float_returned_probability(self, mock_joint_probability):
+        mock_joint_probability.side_effect = [0.3, 0.75]
+        value = self.network.P(f'{self.BURGLARY}')
+        self.assertAlmostEqual(0.3 / 0.75, value)
+
+    @mock.patch('src.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
+    def test_dictionary_returned_probability(self, mock_joint_probability):
+        mock_joint_probability.side_effect = [{'a': 0.3, 'b': 0.2, 'c': 0.75}, 0.75]
+        value = self.network.P(f'{self.BURGLARY}')
+        self.assertAlmostEqual(0.3 / 0.75, value['a'])
+        self.assertAlmostEqual(0.2 / 0.75, value['b'])
+        self.assertAlmostEqual(0.75 / 0.75, value['c'])
+
+    def test_invalid_query_probability(self):
+        from src.exceptions.exceptions import InvalidQuery
+        with self.assertRaises(InvalidQuery):
+            self.network.P(f'{self.BURGLARY} | , ')
+
+    def test_decide_calculation_order(self):
+        def _get_ordering_for_parameters(_query_variables):
+            import random
+            needed_variables = {v.name: v for v in _query_variables}
+            purified_variables = self.network._eliminate_unnecessary_variables(
+                variables=needed_variables.keys())
+            hidden_variables = {v for v in purified_variables if v not in needed_variables.keys()}
+
+            return self.network._decide_calculation_order(needed_variable_names=needed_variables,
+                                                          purified_variables=purified_variables,
+                                                          hidden_variables=hidden_variables)
+
+        ordering = _get_ordering_for_parameters([QueryVariable(name=f'{self.JOHN_CALLS}')])
+        self.assertListEqual([ProbabilityFactor(name=f'{self.EARTHQUAKE}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.BURGLARY}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.ALARM}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.JOHN_CALLS}'), ], ordering)
+
+        ordering = _get_ordering_for_parameters(
+            [QueryVariable(name=f'{self.JOHN_CALLS}', value='t')])
+        self.assertListEqual([ProbabilityFactor(name=f'{self.EARTHQUAKE}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.BURGLARY}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.ALARM}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.JOHN_CALLS}', value='t')], ordering)
+
+        ordering = _get_ordering_for_parameters(
+            [QueryVariable(name=f'{self.EARTHQUAKE}', value='f'),
+             QueryVariable(name=f'{self.JOHN_CALLS}')])
+        self.assertListEqual([ProbabilityFactor(name=f'{self.EARTHQUAKE}', value='f'),
+                              ProbabilityFactor(name=f'{self.BURGLARY}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.ALARM}', sum_out=True),
+                              ProbabilityFactor(name=f'{self.JOHN_CALLS}'), ], ordering)
 
     def test_variable_elimination(self):
         # Try each variable one by one
