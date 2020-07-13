@@ -27,6 +27,10 @@ class TestNetworkNode(TestCase):
         self.assertEqual(probabilities, node.probabilities)
         self.assertEqual(all_random_variables, node.all_random_variables)
 
+        # Probability
+        self.assertEqual(0.7, node.probability(marvelous_node='0'))
+        self.assertEqual(0.3, node.probability(marvelous_node='1'))
+
         # Representation
         repr_node = eval(repr(node))
         self.assertEqual(node_name, repr_node.node_name)
