@@ -181,8 +181,8 @@ class BayesianNetwork(object):
 
     def P(self, query: str) -> Union[float, Dict[str, float]]:
         """
-        Exact probabilistic inference function that will be used for calculation of full-joint and
-        conditional probabilities on the given bayesian network context.
+        Exact probabilistic inference function that will be used for calculation of posterior
+        probability on the given bayesian network context.
 
         .. note:: Nominator is returned as with multiple query variable combinations if there
             exist any query variable
@@ -208,7 +208,7 @@ class BayesianNetwork(object):
     def _calculate_joint_probability(self, variables: List[QueryVariable]) \
             -> Union[float, Dict[str, float]]:
         """
-        Calculation of probabilities of the given variable set where it is made up of query and
+        Calculation of joint probability of the given variable set where it is made up of query and
         evidence variables
 
         Procedural steps:
@@ -251,7 +251,11 @@ class BayesianNetwork(object):
     def _probability_inference(self, calculation_order: Tuple[ProbabilityFactor], tab_stop: int = 0,
                                **context) -> float:
         """
-        Probability calculation of defined calculation order with the given initial context
+        Probability calculation of defined calculation order with the given initial context for the
+        exact bayesian inference with the below formulation:
+
+        .. math::
+             S_{PS}(x_{1}...x_{n}) = \prod_{i=1}^{n}P(X_{i} | parents(X_{i})
 
         Recursive function where
 
