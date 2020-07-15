@@ -1,3 +1,4 @@
+import itertools
 from unittest import TestCase, mock
 
 from .bayesian_network import BayesianNetwork, ProbabilityFactor
@@ -237,6 +238,9 @@ class BayesianNetworkProbabilityTest(TestCase):
     JOHN_CALLS = "JohnCalls"
     MARRY_CALLS = "MaryCalls"
 
+    LARGE_ERROR_DELTA = 0.0005
+    SMALL_ERROR_DELTA = 0.000005
+
     sample_network = {
         BURGLARY: {
             "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
@@ -433,3 +437,36 @@ class BayesianNetworkProbabilityTest(TestCase):
         needed_variable_set = self.network._eliminate_unnecessary_variables(variables=variables)
         self.assertSetEqual({self.MARRY_CALLS, self.ALARM, self.EARTHQUAKE, self.BURGLARY},
                             needed_variable_set)
+
+    def test_bayesian_network_exact_inference_1(self):
+        p = self.network.P(f'{self.BURGLARY} | {self.JOHN_CALLS} = t, {self.MARRY_CALLS} = t')
+
+        # Case of exposure to burglary when your both neighbors call you
+        self.assertAlmostEqual(0.284, p[str({f'{self.BURGLARY}': 't'})],
+                               delta=self.LARGE_ERROR_DELTA)
+        # Case of non-exposure to burglary when your both neighbors call you
+        self.assertAlmostEqual(0.716, p[str({f'{self.BURGLARY}': 'f'})],
+                               delta=self.LARGE_ERROR_DELTA)
+
+    def test_bayesian_network_exact_inference_2(self):
+        # Should be the same with respect to network structure
+        mary_call_alarm_combination = itertools.product(['t', 'f'], ['t', 'f'])
+        for mary_call, alarm in mary_call_alarm_combination:
+            p1 = self.network.P(
+                f'{self.MARRY_CALLS} = {mary_call} | {self.JOHN_CALLS} = f, {self.ALARM} = '
+                f'{alarm}, {self.EARTHQUAKE}= f, {self.BURGLARY} = t')
+            p2 = self.network.P(f'{self.MARRY_CALLS} = {mary_call} | {self.ALARM} = {alarm}')
+            self.assertAlmostEqual(p1, p2, delta=self.LARGE_ERROR_DELTA)
+
+    def test_bayesian_network_exact_inference_3(self):
+        p = self.network.P(
+            f'{self.JOHN_CALLS} = t, {self.MARRY_CALLS} = t, {self.ALARM} = t,  {self.BURGLARY} = '
+            f'f, {self.EARTHQUAKE} = f')
+        self.assertAlmostEqual(0.000628, p, delta=self.SMALL_ERROR_DELTA)
+
+    def test_bayesian_network_exact_inference_4(self):
+        p1 = self.network.P(f'{self.ALARM} = t | {self.BURGLARY} = t, {self.EARTHQUAKE} = t')
+        self.assertAlmostEqual(0.95, p1, delta=self.LARGE_ERROR_DELTA)
+
+        p1 = self.network.P(f'{self.ALARM} = f | {self.BURGLARY} = f, {self.EARTHQUAKE} = f')
+        self.assertAlmostEqual(0.999, p1, delta=self.LARGE_ERROR_DELTA)
