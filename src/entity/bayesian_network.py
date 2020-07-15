@@ -309,7 +309,7 @@ class BayesianNetwork(object):
                                                                  tab_stop=tab_stop + 1,
                                                                  **new_context)
             else:
-                error_message = f'Unexpected probability factor for {first_factor.value}!'
+                error_message = f'Unexpected probability factor for {node_name}!'
                 logging.error(error_message)
                 raise InvalidProbabilityFactor(error_message)
 

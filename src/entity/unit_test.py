@@ -2,6 +2,7 @@ from unittest import TestCase, mock
 
 from .bayesian_network import BayesianNetwork, ProbabilityFactor
 from .network_node import NetworkNode
+from ..exceptions.exceptions import InvalidProbabilityFactor
 from ..probability.probability import QueryVariable
 
 
@@ -285,9 +286,79 @@ class BayesianNetworkProbabilityTest(TestCase):
         with self.assertRaises(InvalidQuery):
             self.network.P(f'{self.BURGLARY} | , ')
 
+    @mock.patch('src.entity.bayesian_network.BayesianNetwork._probability_inference')
+    def test_calculate_joint_probability(self, mock_probability_inference):
+        # Note: Anyways we will have +1 for denominator part. The test will test nominator section
+        mock_probability_inference.return_value = 0.8
+
+        # No query variable without value
+        query = f'{self.BURGLARY} = t, {self.ALARM} = f | {self.EARTHQUAKE} = f'
+        self.network.P(query=query)
+        self.assertEqual(2, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # One query variable without value
+        query = f'{self.BURGLARY} = t, {self.ALARM} | {self.EARTHQUAKE} = f'
+        self.network.P(query=query)
+        self.assertEqual(3, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # One query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM} =f | {self.EARTHQUAKE} = f'
+        self.network.P(query=query)
+        self.assertEqual(3, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # Two query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM} | {self.EARTHQUAKE} = f'
+        self.network.P(query=query)
+        self.assertEqual(5, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # Two query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM}'
+        self.network.P(query=query)
+        self.assertEqual(5, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # Three query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM}, {self.EARTHQUAKE}'
+        self.network.P(query=query)
+        self.assertEqual(9, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # Three query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM}, {self.EARTHQUAKE} | {self.JOHN_CALLS} = t'
+        self.network.P(query=query)
+        self.assertEqual(9, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+        # Three query variable without value
+        query = f'{self.BURGLARY}, {self.ALARM}, {self.EARTHQUAKE} | {self.JOHN_CALLS} = f, ' \
+                f'{self.MARRY_CALLS} = t'
+        self.network.P(query=query)
+        self.assertEqual(9, mock_probability_inference.call_count)
+        mock_probability_inference.reset_mock()
+
+    def test_probability_inference_with_no_factor(self):
+        self.assertAlmostEqual(1.0, self.network._probability_inference(tuple()))
+
+    def test_probability_inference_with_one_factor(self):
+        self.assertAlmostEqual(0.001, self.network._probability_inference(
+            (ProbabilityFactor(name=f'{self.ALARM}'),), Alarm='t', Earthquake='f', Burglary='f'))
+
+        self.assertAlmostEqual(1.0, self.network._probability_inference(
+            (ProbabilityFactor(name=f'{self.ALARM}', sum_out=True),), Earthquake='f', Burglary='f'))
+
+        self.assertAlmostEqual(0.001, self.network._probability_inference(
+            (ProbabilityFactor(name=f'{self.ALARM}', value='t'),), Earthquake='f', Burglary='f'))
+
+        with self.assertRaises(InvalidProbabilityFactor):
+            self.assertAlmostEqual(0.001, self.network._probability_inference(
+                (ProbabilityFactor(name=f'{self.ALARM}', value='t', sum_out=True),)))
+
     def test_decide_calculation_order(self):
         def _get_ordering_for_parameters(_query_variables):
-            import random
             needed_variables = {v.name: v for v in _query_variables}
             purified_variables = self.network._eliminate_unnecessary_variables(
                 variables=needed_variables.keys())
