@@ -6,6 +6,8 @@ from .network_node import NetworkNode
 from ..exceptions.exceptions import InvalidProbabilityFactor
 from ..probability.probability import QueryVariable
 
+__all__ = []
+
 
 class TestNetworkNode(TestCase):
 
@@ -271,13 +273,15 @@ class BayesianNetworkProbabilityTest(TestCase):
         from ..input_parser.input_parser import InputParser
         self.network = BayesianNetwork(initial_network=InputParser.from_dict(self.sample_network))
 
-    @mock.patch('src.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
+    @mock.patch(
+        'bayesian_inference.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
     def test_single_float_returned_probability(self, mock_joint_probability):
         mock_joint_probability.side_effect = [0.3, 0.75]
         value = self.network.P(f'{self.BURGLARY}')
         self.assertAlmostEqual(0.3 / 0.75, value)
 
-    @mock.patch('src.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
+    @mock.patch(
+        'bayesian_inference.entity.bayesian_network.BayesianNetwork._calculate_joint_probability')
     def test_dictionary_returned_probability(self, mock_joint_probability):
         mock_joint_probability.side_effect = [{'a': 0.3, 'b': 0.2, 'c': 0.75}, 0.75]
         value = self.network.P(f'{self.BURGLARY}')
@@ -286,11 +290,11 @@ class BayesianNetworkProbabilityTest(TestCase):
         self.assertAlmostEqual(0.75 / 0.75, value['c'])
 
     def test_invalid_query_probability(self):
-        from src.exceptions.exceptions import InvalidQuery
+        from bayesian_inference.exceptions.exceptions import InvalidQuery
         with self.assertRaises(InvalidQuery):
             self.network.P(f'{self.BURGLARY} | , ')
 
-    @mock.patch('src.entity.bayesian_network.BayesianNetwork._probability_inference')
+    @mock.patch('bayesian_inference.entity.bayesian_network.BayesianNetwork._probability_inference')
     def test_calculate_joint_probability(self, mock_probability_inference):
         # Note: Anyways we will have +1 for denominator part. The test will test nominator section
         mock_probability_inference.return_value = 0.8

@@ -1,10 +1,11 @@
 import logging
 import re
-
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 
 from ..exceptions.exceptions import NonUniqueRandomVariablesInQuery, RandomVariableNotInContext
+
+__all__ = ['QueryVariable', 'query_parser']
 
 WORD = r'(\s*\w+\s*)'
 NON_VALUED_GROUP = rf'(?:{WORD}(?:={WORD})?)'

@@ -5,11 +5,11 @@ from unittest.mock import patch
 from .input_parser import InputParser
 from ..entity.network_node import NetworkNode
 from ..exceptions.exceptions import (
-    IncompleteNodeDataException,
-    HaveAtLeastOneRandomVariable,
-    NotAllExpectedProbabilityExist,
-    PredecessorNotExistInNetwork
+    IncompleteNodeDataException, HaveAtLeastOneRandomVariable, NotAllExpectedProbabilityExist,
+    PredecessorNotExistInNetwork,
 )
+
+__all__ = []
 
 
 class TestInputParser(TestCase):
@@ -46,12 +46,12 @@ class TestInputParser(TestCase):
         sample_network = {
             self._node_name: {
                 InputParser.PREDECESSORS_TOKEN: [predecessor_a, predecessor_b]
-            },
-            predecessor_a: {},
+            }, predecessor_a: {},
         }
 
         with self.assertRaises(PredecessorNotExistInNetwork) as e:
-            InputParser._assert_all_predecessors_exist(sample_network[self._node_name], sample_network)
+            InputParser._assert_all_predecessors_exist(sample_network[self._node_name],
+                                                       sample_network)
         self.assertTrue(predecessor_b in str(e.exception))
 
     def test_all_predecessors_exist_valid_data(self):
@@ -61,56 +61,45 @@ class TestInputParser(TestCase):
         sample_network = {
             self._node_name: {
                 InputParser.PREDECESSORS_TOKEN: [predecessor_a, predecessor_b]
-            },
-            predecessor_a: {},
-            predecessor_b: {},
+            }, predecessor_a: {}, predecessor_b: {},
         }
         try:
-            InputParser._assert_all_predecessors_exist(sample_network[self._node_name], sample_network)
+            InputParser._assert_all_predecessors_exist(sample_network[self._node_name],
+                                                       sample_network)
         except PredecessorNotExistInNetwork:
             self.fail('Unexcepted exception occurred.')
 
     def test_all_probabilities_exist_lack_probability(self):
         all_random_variables = [['0', '1'], ['1', '2', '3']]
         sample_probability = {
-            '(0,1)': 0.5,
-            '(0,2)': 0.5,
-            '(0,3)': 0.5,
-            '(1,2)': 0.5,
-            '(1,3)': 0.5,
+            '(0,1)': 0.5, '(0,2)': 0.5, '(0,3)': 0.5, '(1,2)': 0.5, '(1,3)': 0.5,
         }
 
         with self.assertRaises(NotAllExpectedProbabilityExist) as e:
-            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability, all_random_variables)
+            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability,
+                                                        all_random_variables)
         self.assertTrue('(1,1)' in str(e.exception))
 
     def test_all_probabilities_exist_with_wrong_key(self):
         all_random_variables = [['0', '1'], ['1', '2', '3']]
         sample_probability = {
-            '(0,1)': 0.5,
-            '(0,2)': 0.5,
-            '(0,3)': 0.5,
-            '(1, 1)': 0.5,  # Here the key is wrong
-            '(1,2)': 0.5,
-            '(1,3)': 0.5,
+            '(0,1)': 0.5, '(0,2)': 0.5, '(0,3)': 0.5, '(1, 1)': 0.5,  # Here the key is wrong
+            '(1,2)': 0.5, '(1,3)': 0.5,
         }
 
         with self.assertRaises(NotAllExpectedProbabilityExist) as e:
-            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability, all_random_variables)
+            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability,
+                                                        all_random_variables)
         self.assertTrue('(1,1)' in str(e.exception))
 
     def test_all_probabilities_exist_valid_data(self):
         all_random_variables = [['0', '1'], ['1', '2', '3']]
         sample_probability = {
-            '(0,1)': 0.5,
-            '(0,2)': 0.5,
-            '(0,3)': 0.5,
-            '(1,1)': 0.5,
-            '(1,2)': 0.5,
-            '(1,3)': 0.5,
+            '(0,1)': 0.5, '(0,2)': 0.5, '(0,3)': 0.5, '(1,1)': 0.5, '(1,2)': 0.5, '(1,3)': 0.5,
         }
         try:
-            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability, all_random_variables)
+            InputParser._assert_all_probabilities_exist(self._node_name, sample_probability,
+                                                        all_random_variables)
         except NotAllExpectedProbabilityExist:
             self.fail('Un-excepted exception occurred.')
 

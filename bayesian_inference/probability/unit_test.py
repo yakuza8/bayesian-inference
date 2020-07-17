@@ -3,6 +3,8 @@ from unittest import TestCase
 from .probability import query_parser, QueryVariable
 from ..exceptions.exceptions import NonUniqueRandomVariablesInQuery, RandomVariableNotInContext
 
+__all__ = []
+
 
 class TestProbabilityParser(TestCase):
 

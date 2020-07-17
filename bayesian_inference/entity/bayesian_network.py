@@ -10,6 +10,8 @@ from .network_node import NetworkNode
 from ..exceptions.exceptions import InvalidQuery, InvalidProbabilityFactor
 from ..probability.probability import query_parser, QueryVariable
 
+__all__ = ['ProbabilityFactor', 'BayesianNetwork', 'P']
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)-8s : %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 

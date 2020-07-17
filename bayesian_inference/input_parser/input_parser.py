@@ -8,6 +8,8 @@ from ..exceptions.exceptions import (
     HaveAtLeastOneRandomVariable,
 )
 
+__all__ = ['InputParser']
+
 
 class InputParser(object):
     """

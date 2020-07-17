@@ -1,8 +1,8 @@
 [run]
 command_line = -m unittest discover -p "*_test.py"
-source = src
+source = bayesian_inference
 omit = *unit_test.py
 
 [report]
-include = src/*
+include = bayesian_inference/*
 skip_empty = True
