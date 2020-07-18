@@ -20,36 +20,39 @@ There is a simple network configuration as dictionary format below and entities 
 respect to example network.
 
 ```python
-BURGLARY = "Burglary"
-EARTHQUAKE = "Earthquake"
-ALARM = "Alarm"
-JOHN_CALLS = "JohnCalls"
-MARRY_CALLS = "MaryCalls"
-
-sample_network = {
-    BURGLARY: {
-        "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
-            "(t)": 0.001, "(f)": 0.999
-        }
-    }, EARTHQUAKE: {
-        "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
-            "(t)": 0.002, "(f)": 0.998
-        }
-    }, ALARM: {
-        "predecessors": [BURGLARY, EARTHQUAKE], "random_variables": ["t", "f"], "probabilities": {
-            "(f,f,f)": 0.999, "(f,f,t)": 0.001, "(f,t,f)": 0.71, "(f,t,t)": 0.29, "(t,f,f)": 0.06,
-            "(t,f,t)": 0.94, "(t,t,f)": 0.05, "(t,t,t)": 0.95
-        }
-    }, JOHN_CALLS: {
-        "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
-            "(f,f)": 0.95, "(f,t)": 0.05, "(t,f)": 0.10, "(t,t)": 0.90
-        }
-    }, MARRY_CALLS: {
-        "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
-            "(f,f)": 0.99, "(f,t)": 0.01, "(t,f)": 0.30, "(t,t)": 0.70
-        }
-    }
-}
+>>> from bayesian_inference import BayesianNetwork, InputParser
+>>>
+>>> BURGLARY = "Burglary"
+>>> EARTHQUAKE = "Earthquake"
+>>> ALARM = "Alarm"
+>>> JOHN_CALLS = "JohnCalls"
+>>> MARRY_CALLS = "MaryCalls"
+>>> 
+>>> sample_network = {
+...     BURGLARY: {
+...         "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
+...             "(t)": 0.001, "(f)": 0.999
+...         }
+...     }, EARTHQUAKE: {
+...         "predecessors": [], "random_variables": ["t", "f"], "probabilities": {
+...             "(t)": 0.002, "(f)": 0.998
+...         }
+...     }, ALARM: {
+...         "predecessors": [BURGLARY, EARTHQUAKE], "random_variables": ["t", "f"], "probabilities": {
+...             "(f,f,f)": 0.999, "(f,f,t)": 0.001, "(f,t,f)": 0.71, "(f,t,t)": 0.29, "(t,f,f)": 0.06,
+...             "(t,f,t)": 0.94, "(t,t,f)": 0.05, "(t,t,t)": 0.95
+...         }
+...     }, JOHN_CALLS: {
+...         "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
+...             "(f,f)": 0.95, "(f,t)": 0.05, "(t,f)": 0.10, "(t,t)": 0.90
+...         }
+...     }, MARRY_CALLS: {
+...         "predecessors": [ALARM], "random_variables": ["t", "f"], "probabilities": {
+...             "(f,f)": 0.99, "(f,t)": 0.01, "(t,f)": 0.30, "(t,t)": 0.70
+...         }
+...     }
+... }
+>>> network = BayesianNetwork(initial_network=InputParser.from_dict(sample_network))
 ```
 
 ### Network Node
