@@ -67,6 +67,7 @@ parents of the node and the values of current node
 Single node can be represented with the following representation:
 
 ```python
+>>> from bayesian_inference import NetworkNode
 >>> node = eval(NetworkNode('Alarm', ['t', 'f'], ['Burglary', 'Earthquake'], {'(f,f,f)': 0.999, '(f,f,t)': 0.001, '(f,t,f)': 0.71, '(f,t,t)': 0.29, '(t,f,f)': 0.06, '(t,f,t)': 0.94, '(t,t,f)': 0.05, '(t,t,t)': 0.95}, [['t', 'f'], ['t', 'f'], ['t', 'f']]))
 >>> print(node)
 | Burglary   | Earthquake   |   P(Alarm=t) |   P(Alarm=f) |
