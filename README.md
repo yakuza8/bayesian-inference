@@ -108,5 +108,7 @@ one can query exact inference of probability from Bayesian network.
 >>> # Query exact inference from network, details of queries will be explained in next sections
 >>> network.P('Burglary | JohnCalls = t, MaryCalls = t')
 {"{'Burglary': 't'}": 0.28417183536439294, "{'Burglary': 'f'}": 0.7158281646356072}
+>>> network.P('JohnCalls = t, MaryCalls = t, Alarm = t,  Burglary = f, Earthquake = f')
+0.0006281112599999999
 ```
 
