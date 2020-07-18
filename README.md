@@ -57,7 +57,7 @@ respect to example network.
 
 ### Network Node
 Single unit in the network representing a random variable in the uncertain world.
-It has the following fields:
+It has the following fields expected by constructor:
 * node_name: Random variable name which will be the node name in the network
 * random_variables: List of available values of random variable in string format
 * predecessors: Parents of the random variable in the network as a list of string where each item
@@ -65,7 +65,6 @@ is the name of parent random variable
 * probabilities: Probability list of the random variable described as conditional probabilities
 * all_random_variables: List of lists of strings representing random variable values respectively
 parents of the node and the values of current node
-
 
 Single node can be represented with the following representation:
 
@@ -80,3 +79,34 @@ Single node can be represented with the following representation:
 | f          | t            |        0.29  |        0.71  |
 | f          | f            |        0.001 |        0.999 |
 ```
+
+**Note:** It is important that you need to provide probability dictionary of `NetworkNode` as explained
+in the following example. Let's have node named `X` and parents as `[A, B, C]`, then you need to have all
+probability keys as `(value_a,value_b,value_c,value_x)` where no whitespace between commas and value are
+listed order of parents and node itself if you want to create node from yourself.
+If you parse with `InputParser`, then it goes over keys and removes whitespaces to make them as expected format. 
+
+### Bayesian Network
+Bayesian network structure that keeps `Directed Acyclic Graph` inside and encapsulates `NetworkNode` instances
+The structure has an instance of [NetworkX](https://github.com/networkx/networkx) DiGraph. Network can be created
+with initial node list. Also, one can add and remove node to the network at runtime. From probability perspective,
+one can query exact inference of probability from Bayesian network.
+
+```python
+>>> # Network initiated above
+>>> from bayesian_inference import NetworkNode
+>>> node1 = NetworkNode(node_name='B', predecessors=['A'], random_variables=[], probabilities={}, all_random_variables=[])
+>>> node2 = NetworkNode(node_name='C', predecessors=['B'], random_variables=[], probabilities={}, all_random_variables=[])
+>>> 
+>>> # Adding node to network, Method expects network node directly
+>>> network.add_node(node1)
+>>> network.add_node(node2)
+>>> 
+>>> # Removal of node from network. Method expects node name to remove
+>>> network.remove_node(node2.node_name)
+>>>
+>>> # Query exact inference from network, details of queries will be explained in next sections
+>>> network.P('Burglary | JohnCalls = t, MaryCalls = t')
+{"{'Burglary': 't'}": 0.28417183536439294, "{'Burglary': 'f'}": 0.7158281646356072}
+```
+
