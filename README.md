@@ -112,3 +112,55 @@ one can query exact inference of probability from Bayesian network.
 0.0006281112599999999
 ```
 
+#### Expected form of probabilistic query
+There is a query parser module under `probability` package that makes query for Bayesian network that
+can be conditional or full joint probability. The form/structure of query should be following regex.
+One can reach visual representation of regex from [this link](https://regexper.com/#%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%28%3F%3A%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%3F%29%28%3F%3A%2C%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%28%3F%3A%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%3F%29%29*%28%3F%3A%5Cs*%5C%7C%5Cs*%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%28%3F%3A%2C%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%29*%29%3F).
+
+```python
+>>> WORD = r'(\s*\w+\s*)'
+>>> NON_VALUED_GROUP = rf'(?:{WORD}(?:={WORD})?)'
+>>> VALUED_GROUP = rf'(?:{WORD}={WORD})'
+>>> QUERY_VARIABLES = rf'{NON_VALUED_GROUP}(?:,{NON_VALUED_GROUP})*'
+>>> EVIDENCE_VARIABLES = rf'{VALUED_GROUP}(?:,{VALUED_GROUP})*'
+>>> QUERY = rf'{QUERY_VARIABLES}(?:\s*\|\s*{EVIDENCE_VARIABLES})?'
+>>> QUERY
+'(?:(\s*\w+\s*)(?:=(\s*\w+\s*))?)(?:,(?:(\s*\w+\s*)(?:=(\s*\w+\s*))?))*(?:\s*\|\s*(?:(\s*\w+\s*)=(\s*\w+\s*))(?:,(?:(\s*\w+\s*)=(\s*\w+\s*)))*)?'
+```
+
+##### Textual meaning of query format is
+* There should be at least one `Valued` or `Non-valued` query parameter.
+    * Valued: Alarm=True
+    * Non-valued: Alarm (No value assigned)
+* There can be conditional/posterior probability section after `|` (pipe) symbol optionally.
+* All the valued and non-valued should be separated by `,` (comma) symbol.
+
+##### Examples
+```python
+from bayesian_inference import query_parser
+>>> # Valid queries
+>>> query_parser('A, B, C')[0]
+True
+>>> query_parser('A, B=b, C')[0]
+True
+>>> query_parser('A=1, B, C')[0]
+True
+>>> query_parser('A, B, C=2')[0]
+True
+>>> query_parser('A=1, B=2, C=3')[0]
+True
+>>> query_parser('A, B, C | D=d')[0]
+True
+>>> query_parser('A=1, B=2, C=2 | D=d')[0]
+True
+>>> query_parser('A, B=2, C | D=d, E=5')[0]
+True
+>>> # Invalid queries (It is expected that all evidence variables should have value)
+>>> query_parser('A, B, C | D')[0]
+False
+>>> query_parser('A, B=b, C | D')[0]
+False
+>>> query_parser('A=1, B, C | D')[0]
+False
+```
+ 
