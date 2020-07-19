@@ -14,7 +14,7 @@ In current implementation, one can define properties of the network as follows:
 to `random variable Y`, then there is a conditional probability relation between them. 
 * There is no cycle in the network and that makes the network `Directed Acyclic Graph`
 
-## Entities
+### Entities
 Usable entities available in the project are listed below which are `NetworkNode` and `BayesianNetwork`.
 There is a simple network configuration as dictionary format below and entities will be explained with
 respect to example network.
@@ -55,7 +55,7 @@ respect to example network.
 >>> network = BayesianNetwork(initial_network=InputParser.from_dict(sample_network))
 ```
 
-### Network Node
+#### Network Node
 Single unit in the network representing a random variable in the uncertain world.
 It has the following fields expected by constructor:
 * node_name: Random variable name which will be the node name in the network
@@ -86,7 +86,7 @@ probability keys as `(value_a,value_b,value_c,value_x)` where no whitespace betw
 listed order of parents and node itself if you want to create node from yourself.
 If you parse with `InputParser`, then it goes over keys and removes whitespaces to make them as expected format. 
 
-### Bayesian Network
+#### Bayesian Network
 Bayesian network structure that keeps `Directed Acyclic Graph` inside and encapsulates `NetworkNode` instances
 The structure has an instance of [NetworkX](https://github.com/networkx/networkx) DiGraph. Network can be created
 with initial node list. Also, one can add and remove node to the network at runtime. From probability perspective,
@@ -112,7 +112,7 @@ one can query exact inference of probability from Bayesian network.
 0.0006281112599999999
 ```
 
-#### Expected form of probabilistic query
+### Expected form of probabilistic query
 There is a query parser module under `probability` package that makes query for Bayesian network that
 can be conditional or full joint probability. The form/structure of query should be following regex.
 One can reach visual representation of regex from [this link](https://regexper.com/#%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%28%3F%3A%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%3F%29%28%3F%3A%2C%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%28%3F%3A%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%3F%29%29*%28%3F%3A%5Cs*%5C%7C%5Cs*%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%28%3F%3A%2C%28%3F%3A%28%5Cs*%5Cw%2B%5Cs*%29%3D%28%5Cs*%5Cw%2B%5Cs*%29%29%29*%29%3F).
@@ -128,14 +128,14 @@ One can reach visual representation of regex from [this link](https://regexper.c
 '(?:(\s*\w+\s*)(?:=(\s*\w+\s*))?)(?:,(?:(\s*\w+\s*)(?:=(\s*\w+\s*))?))*(?:\s*\|\s*(?:(\s*\w+\s*)=(\s*\w+\s*))(?:,(?:(\s*\w+\s*)=(\s*\w+\s*)))*)?'
 ```
 
-##### Textual meaning of query format is
+#### Textual meaning of query format is
 * There should be at least one `Valued` or `Non-valued` query parameter.
     * Valued: Alarm=True
     * Non-valued: Alarm (No value assigned)
 * There can be conditional/posterior probability section after `|` (pipe) symbol optionally.
 * All the valued and non-valued should be separated by `,` (comma) symbol.
 
-##### Examples
+#### Examples
 ```python
 from bayesian_inference import query_parser
 >>> # Valid queries
@@ -164,8 +164,103 @@ False
 False
 ```
 
-##### Validations
+#### Validations
 1. Variable uniqueness validation: No repeated random variable should exist in the query. 
-2. [Optional] Contextual name/value validation: If `expected_symbol_and_values` parameter is provided,
+2. **[Optional]** Contextual name/value validation: If `expected_symbol_and_values` parameter is provided,
 `query_parser` checks names of parsed random variables and validates their values if parsed variable has
 value.
+
+### Input Format and Parsing
+The input format will be explained nearby how you can import them into code. You can directly parse
+json file to get list of `NetworkNode` where keys are node/random variable name and values is an
+object of expected values to create node instance.
+
+Expected fields are:
+* predecessors: List of names of parents of the node where they will be search in the json
+* random_variables: Values for the random variable that are list of string 
+* probabilities: Probabilities of the node explained under `NetworkNode` section.
+
+One can obtain list of nodes by reading json from file with `parse` method of `InputParser` or 
+reading dict and map them to network node with `from_dict` method of `InputParser`. The same
+expectations are hold here defined for json format.
+
+**Note:** Necessary validations are done for parsing nodes so that if there is an unexpected
+value for input by raising corresponding exception.
+
+#### Example Input Format
+```json
+{
+    "Burglary": {
+        "predecessors": [],
+        "random_variables": [
+            "t",
+            "f"
+        ],
+        "probabilities": {
+            "(t)": 0.001,
+            "(f)": 0.999
+        }
+    },
+    "Earthquake": {
+        "predecessors": [],
+        "random_variables": [
+            "t",
+            "f"
+        ],
+        "probabilities": {
+            "(t)": 0.002,
+            "(f)": 0.998
+        }
+    },
+    "Alarm": {
+        "predecessors": [
+            "Burglary",
+            "Earthquake"
+        ],
+        "random_variables": [
+            "t",
+            "f"
+        ],
+        "probabilities": {
+            "(f,f,f)": 0.999,
+            "(f,f,t)": 0.001,
+            "(f,t,f)": 0.71,
+            "(f,t,t)": 0.29,
+            "(t,f,f)": 0.06,
+            "(t,f,t)": 0.94,
+            "(t,t,f)": 0.05,
+            "(t,t,t)": 0.95
+        }
+    },
+    "JohnCalls": {
+        "predecessors": [
+            "Alarm"
+        ],
+        "random_variables": [
+            "t",
+            "f"
+        ],
+        "probabilities": {
+            "(f,f)": 0.95,
+            "(f,t)": 0.05,
+            "(t,f)": 0.1,
+            "(t,t)": 0.9
+        }
+    },
+    "MaryCalls": {
+        "predecessors": [
+            "Alarm"
+        ],
+        "random_variables": [
+            "t",
+            "f"
+        ],
+        "probabilities": {
+            "(f,f)": 0.99,
+            "(f,t)": 0.01,
+            "(t,f)": 0.3,
+            "(t,t)": 0.7
+        }
+    }
+}
+```
