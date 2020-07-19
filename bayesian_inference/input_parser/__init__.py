@@ -1,1 +1,1 @@
-from .input_parser import *
+from .input_parser import InputParser

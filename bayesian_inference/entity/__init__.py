@@ -1,2 +1,2 @@
-from .bayesian_network import *
-from .network_node import *
+from .bayesian_network import ProbabilityFactor, BayesianNetwork, P
+from .network_node import NetworkNode

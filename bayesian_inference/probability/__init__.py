@@ -1,1 +1,1 @@
-from .probability import *
+from .probability import QueryVariable, query_parser
