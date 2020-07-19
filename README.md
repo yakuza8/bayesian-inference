@@ -163,4 +163,9 @@ False
 >>> query_parser('A=1, B, C | D')[0]
 False
 ```
- 
+
+##### Validations
+1. Variable uniqueness validation: No repeated random variable should exist in the query. 
+2. [Optional] Contextual name/value validation: If `expected_symbol_and_values` parameter is provided,
+`query_parser` checks names of parsed random variables and validates their values if parsed variable has
+value.
