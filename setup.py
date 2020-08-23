@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as reqs:
 
 setuptools.setup(
     name="bayesian-inference",
-    version="1.0.1",
+    version="1.0.2",
     author="Berat Cankar",
     author_email="berat.cankar@gmail.com",
     description="Bayesian Inference library over network",
