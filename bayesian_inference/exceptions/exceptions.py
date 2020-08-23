@@ -31,3 +31,7 @@ class InvalidQuery(Exception):
 
 class InvalidProbabilityFactor(Exception):
     pass
+
+
+class VariableNotInGraph(Exception):
+    pass

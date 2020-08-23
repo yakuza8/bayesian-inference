@@ -90,7 +90,10 @@ If you parse with `InputParser`, then it goes over keys and removes whitespaces 
 Bayesian network structure that keeps `Directed Acyclic Graph` inside and encapsulates `NetworkNode` instances
 The structure has an instance of [NetworkX](https://github.com/networkx/networkx) DiGraph. Network can be created
 with initial node list. Also, one can add and remove node to the network at runtime. From probability perspective,
-one can query exact inference of probability from Bayesian network.
+one can query exact inference of probability from Bayesian network. Also, one can control independence property of
+nodes in the graph with `is_independent` method of `BayesianNetwork`. `D-separation principle` is applied for
+deciding whether the nodes are independent or not where additionally one can provide evidence variable list for
+checking the independence property while verification of conditional independence. 
 
 ```python
 >>> # Network initiated above
@@ -110,6 +113,12 @@ one can query exact inference of probability from Bayesian network.
 {"{'Burglary': 't'}": 0.28417183536439294, "{'Burglary': 'f'}": 0.7158281646356072}
 >>> network.P('JohnCalls = t, MaryCalls = t, Alarm = t,  Burglary = f, Earthquake = f')
 0.0006281112599999999
+>>> 
+>>> # Independence check
+>>> network.is_independent('JohnCalls', 'MaryCalls')
+>>> False
+>>> network.is_independent('JohnCalls', 'MaryCalls', evidence_variables=['Alarm'])
+>>> True
 ```
 
 ### Expected form of probabilistic query
@@ -263,4 +272,5 @@ value for input by raising corresponding exception.
         }
     }
 }
+
 ```

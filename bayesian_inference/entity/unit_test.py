@@ -1,9 +1,9 @@
 import itertools
 from unittest import TestCase, mock
 
-from .bayesian_network import BayesianNetwork, ProbabilityFactor
+from .bayesian_network import BayesianNetwork, ProbabilityFactor, is_independent
 from .network_node import NetworkNode
-from ..exceptions.exceptions import InvalidProbabilityFactor
+from ..exceptions.exceptions import InvalidProbabilityFactor, VariableNotInGraph, InvalidQuery
 from ..probability.probability import QueryVariable
 
 __all__ = []
@@ -474,3 +474,41 @@ class BayesianNetworkProbabilityTest(TestCase):
 
         p1 = self.network.P(f'{self.ALARM} = f | {self.BURGLARY} = f, {self.EARTHQUAKE} = f')
         self.assertAlmostEqual(0.999, p1, delta=self.LARGE_ERROR_DELTA)
+
+    def test_check_independence(self):
+        self.assertFalse(self.network.is_independent(self.JOHN_CALLS, self.MARRY_CALLS))
+
+        self.assertTrue(self.network.is_independent(self.JOHN_CALLS, self.MARRY_CALLS, evidence_variables=[self.ALARM]))
+
+        self.assertFalse(self.network.is_independent(self.BURGLARY, self.EARTHQUAKE))
+
+        self.assertTrue(self.network.is_independent(self.BURGLARY, self.EARTHQUAKE, evidence_variables=[self.ALARM]))
+
+        self.assertFalse(self.network.is_independent(self.JOHN_CALLS, self.EARTHQUAKE))
+
+        self.assertTrue(self.network.is_independent(self.JOHN_CALLS, self.EARTHQUAKE, evidence_variables=[self.ALARM]))
+
+        self.assertFalse(is_independent(self.network, self.JOHN_CALLS, self.EARTHQUAKE))
+
+    def test_check_independence_non_existing_variable_exception(self):
+        with self.assertRaises(VariableNotInGraph):
+            self.network.is_independent(self.ALARM, 'Hey')
+
+        with self.assertRaises(VariableNotInGraph):
+            self.network.is_independent('Hey', self.ALARM)
+
+        with self.assertRaises(VariableNotInGraph):
+            self.network.is_independent(self.ALARM, self.BURGLARY, ['Hey'])
+
+        with self.assertRaises(VariableNotInGraph):
+            self.network.is_independent(self.ALARM, self.BURGLARY, [self.EARTHQUAKE, 'Hey'])
+
+        with self.assertRaises(VariableNotInGraph):
+            self.network.is_independent(self.ALARM, self.BURGLARY, ['Hey', self.EARTHQUAKE])
+
+    def test_check_independence_parameter_variable_in_evidences_exception(self):
+        with self.assertRaises(InvalidQuery):
+            self.network.is_independent(self.ALARM, self.BURGLARY, [self.EARTHQUAKE, self.ALARM])
+
+        with self.assertRaises(InvalidQuery):
+            self.network.is_independent(self.ALARM, self.BURGLARY, [self.EARTHQUAKE, self.BURGLARY])

@@ -7,10 +7,10 @@ from typing import List, Callable, Dict, Generator, Set, Iterable, Tuple, Union
 import networkx as nx
 
 from .network_node import NetworkNode
-from ..exceptions.exceptions import InvalidQuery, InvalidProbabilityFactor
+from ..exceptions.exceptions import InvalidQuery, InvalidProbabilityFactor, VariableNotInGraph
 from ..probability.probability import query_parser, QueryVariable
 
-__all__ = ['ProbabilityFactor', 'BayesianNetwork', 'P']
+__all__ = ['ProbabilityFactor', 'BayesianNetwork', 'P', 'is_independent']
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)-8s : %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
@@ -53,6 +53,10 @@ class BayesianNetwork(object):
         for node in initial_network:
             self.add_node(node)
 
+    def is_node_in_graph(self, node_name: str) -> bool:
+        """ Helper function checking node exist in the current graph """
+        return node_name in self.nodes
+
     def add_node(self, node: NetworkNode) -> bool:
         """
         Procedure of adding network node into the graph
@@ -69,7 +73,7 @@ class BayesianNetwork(object):
         node_key = node.node_name
 
         # Already in network
-        if node_key in self.nodes:
+        if self.is_node_in_graph(node_name=node_key):
             return False
 
         # Check acyclic condition of graph
@@ -165,7 +169,7 @@ class BayesianNetwork(object):
         :param node_name: Node name to refer node itself
         :return: Boolean flag whether the node name found and removed successfully from network
         """
-        if node_name in self.nodes:
+        if self.is_node_in_graph(node_name=node_name):
             del self.nodes[node_name]
         else:
             logging.debug(f'{node_name} does not exist in the network.')
@@ -369,5 +373,49 @@ class BayesianNetwork(object):
         logging.debug(f"Extracted necessary variables: {set_of_needed_variables}")
         return set_of_needed_variables
 
+    def is_independent(self, variable1: str, variable2: str,
+                       evidence_variables: List[str] = None) -> bool:
+        """
+        Method to checking whether the given two variables are independent or not. In case of
+        providing evidence variables, independence will be checked by excluding evidence variables.
+
+        .. note:: D-separation principle is applied to check independence
+
+        :param variable1: The first variable name to be exposed to independence control
+        :param variable2: The second variable name to be exposed to independence control
+        :param evidence_variables: List of evidence variables that needs to be considered while
+        checking independence via conditional independence
+        :return: Boolean flag representing independence of variable1 and variable2 i.e. True if they
+        are independent else False
+        """
+        # Check all variables exist in the graph
+        if not self.is_node_in_graph(node_name=variable1) or not self.is_node_in_graph(
+                node_name=variable2) or (
+                evidence_variables is not None and len(evidence_variables) > 0 and any(
+            map(lambda node: not self.is_node_in_graph(node_name=node), evidence_variables))):
+            raise VariableNotInGraph('All variables should exist in the graph.')
+
+        if evidence_variables is not None and len(evidence_variables) > 0:
+            # Make all of them unique and then remove evidences to support conditional independence
+            evidence_variables = set(evidence_variables)
+
+            # Check query variables not in evidence variables
+            if variable1 in evidence_variables or variable2 in evidence_variables:
+                raise InvalidQuery('Independence parameters should not be in evidence variables.')
+
+        undirected_graph = self.G.to_undirected()
+        if evidence_variables:
+            for evidence_variable in evidence_variables:
+                undirected_graph.remove_node(evidence_variable)
+
+        # The graph is undirected so source and destination should not matter
+        return not nx.has_path(G=undirected_graph, source=variable1, target=variable2)
+
 
 P: Callable[[BayesianNetwork, str], float] = lambda network, query: network.P(query=query)
+
+
+def is_independent(network: BayesianNetwork, variable1: str, variable2: str,
+                   evidence_variables: List[str] = None):
+    return network.is_independent(variable1=variable1, variable2=variable2,
+                                  evidence_variables=evidence_variables)
